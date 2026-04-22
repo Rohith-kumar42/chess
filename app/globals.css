@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(0.14 0.005 285);
+  --color-surface: oklch(0.18 0.008 285);
+  --color-surface-hover: oklch(0.22 0.01 285);
+  --color-border: oklch(0.28 0.012 285);
+  --color-border-subtle: oklch(0.22 0.008 285);
+  --color-foreground: oklch(0.97 0.005 285);
+  --color-foreground-muted: oklch(0.65 0.02 285);
+  --color-foreground-subtle: oklch(0.5 0.015 285);
+
+  --color-primary: oklch(0.72 0.18 145);
+  --color-primary-hover: oklch(0.78 0.2 145);
+  --color-primary-foreground: oklch(0.15 0.03 145);
+  --color-primary-subtle: oklch(0.25 0.06 145);
+
+  --color-accent: oklch(0.75 0.15 55);
+  --color-accent-hover: oklch(0.8 0.17 55);
+  --color-accent-foreground: oklch(0.15 0.03 55);
+
+  --color-success: oklch(0.72 0.18 145);
+  --color-warning: oklch(0.78 0.16 80);
+  --color-danger: oklch(0.65 0.22 25);
+  --color-info: oklch(0.72 0.14 230);
+
+  --color-sidebar: oklch(0.12 0.008 285);
+  --color-sidebar-hover: oklch(0.16 0.01 285);
+  --color-sidebar-active: oklch(0.2 0.04 145);
+
+  --font-family-display: 'Inter', system-ui, sans-serif;
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-family-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-background);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-foreground-subtle);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px oklch(0.72 0.18 145 / 0.3); }
+  50% { box-shadow: 0 0 20px oklch(0.72 0.18 145 / 0.5); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-hover) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Glass morphism card */
+.glass-card {
+  background: oklch(0.18 0.008 285 / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* Chess piece decorative background */
+.chess-pattern {
+  background-image: 
+    linear-gradient(45deg, oklch(0.16 0.005 285) 25%, transparent 25%),
+    linear-gradient(-45deg, oklch(0.16 0.005 285) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, oklch(0.16 0.005 285) 75%),
+    linear-gradient(-45deg, transparent 75%, oklch(0.16 0.005 285) 75%);
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+  opacity: 0.3;
+}
