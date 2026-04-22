@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { KnightIcon } from '@/components/icons/ChessPieces'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -47,25 +48,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 chess-pattern pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-primary/5 pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-obsidian">
+      {/* Subtle gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-obsidian via-obsidian to-board-dark pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-md mx-auto px-6">
         <div className="glass-card p-8 animate-fade-in">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 mb-4">
-              <span className="text-2xl">♛</span>
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-grandmaster-gold/10 border border-grandmaster-gold/20 mb-4">
+              <KnightIcon size={24} className="text-grandmaster-gold" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
-            <p className="text-foreground-muted text-sm mt-1">Sign in to Chess Academy</p>
+            <h1
+              className="text-2xl font-bold tracking-tight text-ivory"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Welcome Back
+            </h1>
+            <p className="text-parchment text-sm mt-1">Sign in to Chess Academy</p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-6 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm animate-fade-in">
+            <div className="mb-6 p-3 rounded-lg bg-rook-copper/10 border border-rook-copper/20 text-rook-copper text-sm animate-fade-in">
               {error}
             </div>
           )}
@@ -73,7 +78,7 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground-muted mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-parchment mb-1.5">
                 Email Address
               </label>
               <input
@@ -83,12 +88,12 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full px-4 py-2.5 rounded-lg bg-surface border border-border text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                className="w-full px-4 py-2.5 rounded-lg bg-board-dark border border-board-light text-ivory placeholder:text-dust focus:outline-none focus:border-grandmaster-gold focus:ring-1 focus:ring-grandmaster-gold/30 transition-colors"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground-muted mb-1.5">
+              <label htmlFor="password" className="block text-sm font-medium text-parchment mb-1.5">
                 Password
               </label>
               <input
@@ -98,14 +103,14 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-lg bg-surface border border-border text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                className="w-full px-4 py-2.5 rounded-lg bg-board-dark border border-board-light text-ivory placeholder:text-dust focus:outline-none focus:border-grandmaster-gold focus:ring-1 focus:ring-grandmaster-gold/30 transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-2.5 rounded-lg bg-grandmaster-gold text-obsidian font-semibold hover:bg-gold-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -121,7 +126,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-foreground-subtle mt-6">
+          <p className="text-center text-xs text-dust mt-6">
             Contact your administrator for account access
           </p>
         </div>

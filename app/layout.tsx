@@ -1,17 +1,31 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Cormorant_Garamond, DM_Sans, DM_Mono } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({
+const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-cormorant',
   display: 'swap',
-  variable: '--font-inter',
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+})
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-dm-mono',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
-  title: 'Chess Academy | Tutoring Management Platform',
-  description: 'Manage students, track progress, schedule sessions, and grow your chess academy with our comprehensive tutoring platform.',
-  keywords: ['chess', 'academy', 'tutoring', 'coaching', 'management'],
+  title: 'Chess Academy | Every game. Every student. Every edge.',
+  description: 'The management platform built for chess academies that take results seriously.',
 }
 
 export default function RootLayout({
@@ -20,10 +34,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="min-h-screen antialiased">
+    <html lang="en" className={`${cormorant.variable} ${dmSans.variable} ${dmMono.variable}`}>
+      <body className="min-h-screen antialiased bg-background text-foreground">
         {children}
       </body>
     </html>
   )
 }
+
