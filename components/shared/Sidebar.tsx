@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { KnightIcon } from '@/components/icons/ChessPieces'
+import ThemeToggle from '@/components/shared/ThemeToggle'
 
 interface NavItem {
   label: string
@@ -75,10 +76,10 @@ export default function Sidebar({ role, userName }: SidebarProps) {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-board-dark border border-board-light hover:bg-board-mid transition-colors"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-surface-raised border border-border hover:bg-surface-hover transition-colors"
         aria-label="Open menu"
       >
-        <Menu size={20} className="text-ivory" />
+        <Menu size={20} className="text-foreground" />
       </button>
 
       {/* Mobile overlay */}
@@ -92,26 +93,26 @@ export default function Sidebar({ role, userName }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full z-50 bg-obsidian border-r border-board-light/20
+          fixed top-0 left-0 h-full z-50 bg-sidebar border-r border-border/20
           flex flex-col transition-all duration-300 ease-in-out
           ${collapsed ? 'w-[72px]' : 'w-64'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Header */}
-        <div className={`flex items-center gap-3 p-4 border-b border-board-light/20 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-grandmaster-gold/10 border border-grandmaster-gold/20 flex items-center justify-center">
-            <KnightIcon size={18} className="text-grandmaster-gold" />
+        <div className={`flex items-center gap-3 p-4 border-b border-border/20 ${collapsed ? 'justify-center' : ''}`}>
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <KnightIcon size={18} className="text-accent" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
               <h2
-                className="text-sm font-bold tracking-tight text-ivory"
+                className="text-sm font-bold tracking-tight text-foreground"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 Chess Academy
               </h2>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-grandmaster-gold">{roleLabel}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-accent">{roleLabel}</p>
             </div>
           )}
         </div>
@@ -131,8 +132,8 @@ export default function Sidebar({ role, userName }: SidebarProps) {
                       transition-all duration-150 relative
                       ${collapsed ? 'justify-center' : ''}
                       ${isActive
-                        ? 'bg-board-mid text-ivory font-medium'
-                        : 'text-parchment hover:bg-board-dark hover:text-ivory'
+                        ? 'bg-sidebar-active text-foreground font-medium shadow-sm'
+                        : 'text-foreground-muted hover:bg-sidebar-hover hover:text-foreground'
                       }
                     `}
                     style={{
@@ -145,10 +146,10 @@ export default function Sidebar({ role, userName }: SidebarProps) {
                     {/* Active indicator — left accent bar */}
                     {isActive && (
                       <span
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-grandmaster-gold"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-accent"
                       />
                     )}
-                    <span className={`flex-shrink-0 ${isActive ? 'text-grandmaster-gold' : ''}`}>
+                    <span className={`flex-shrink-0 ${isActive ? 'text-accent' : ''}`}>
                       {item.icon}
                     </span>
                     {!collapsed && <span className="truncate">{item.label}</span>}
@@ -160,11 +161,11 @@ export default function Sidebar({ role, userName }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-board-light/20 p-2 space-y-1">
+        <div className="border-t border-border/20 p-2 space-y-1">
           {/* Collapse toggle (desktop only) */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-parchment hover:bg-board-dark hover:text-ivory transition-colors"
+            className="hidden lg:flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-foreground-muted hover:bg-sidebar-hover hover:text-foreground transition-colors"
           >
             <ChevronLeft size={20} className={`transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
             {!collapsed && <span>Collapse</span>}
@@ -173,14 +174,20 @@ export default function Sidebar({ role, userName }: SidebarProps) {
           {/* User info */}
           {!collapsed && userName && (
             <div className="px-3 py-1.5">
-              <p className="text-xs text-dust truncate">{userName}</p>
+              <p className="text-xs text-foreground-subtle truncate">{userName}</p>
             </div>
           )}
+
+          {/* Theme Toggle */}
+          <div className={`px-3 py-1.5 flex items-center gap-3 text-sm text-foreground-muted ${collapsed ? 'justify-center' : 'justify-between'}`}>
+            {!collapsed && <span>Appearance</span>}
+            <ThemeToggle />
+          </div>
 
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-parchment hover:bg-rook-copper/10 hover:text-rook-copper transition-colors ${collapsed ? 'justify-center' : ''}`}
+            className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-foreground-muted hover:bg-rook-copper/10 hover:text-rook-copper transition-colors ${collapsed ? 'justify-center' : ''}`}
           >
             <LogOut size={20} />
             {!collapsed && <span>Sign Out</span>}

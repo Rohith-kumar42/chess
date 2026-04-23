@@ -38,7 +38,7 @@ export default function ChessBoardVisual() {
       />
 
       {/* 8x8 grid */}
-      <div className="grid grid-cols-8 grid-rows-8 w-full h-full rounded-lg overflow-hidden border border-board-light/30">
+      <div className="grid grid-cols-8 grid-rows-8 w-full h-full rounded-lg overflow-hidden border border-border/30">
         {squares.map(({ row, col, isDark }) => {
           const piece = pieces.find(p => p.row === row && p.col === col)
           return (
@@ -47,8 +47,8 @@ export default function ChessBoardVisual() {
               className="relative flex items-center justify-center"
               style={{
                 backgroundColor: isDark
-                  ? 'var(--color-board-mid)'
-                  : 'var(--color-board-dark)',
+                  ? 'var(--color-surface-raised)'
+                  : 'var(--color-surface)',
               }}
             >
               {piece && (
@@ -61,7 +61,7 @@ export default function ChessBoardVisual() {
                 >
                   <piece.Piece
                     size={28}
-                    className="text-grandmaster-gold"
+                    className="text-accent"
                   />
                 </div>
               )}
@@ -74,13 +74,13 @@ export default function ChessBoardVisual() {
       <div
         className="absolute inset-0 pointer-events-none rounded-lg"
         style={{
-          background: 'linear-gradient(to right, var(--color-obsidian) 0%, transparent 15%, transparent 85%, var(--color-obsidian) 100%)',
+          background: 'linear-gradient(to right, var(--color-bg) 0%, transparent 15%, transparent 85%, var(--color-bg) 100%)',
         }}
       />
       <div
         className="absolute inset-0 pointer-events-none rounded-lg"
         style={{
-          background: 'linear-gradient(to bottom, var(--color-obsidian) 0%, transparent 10%, transparent 90%, var(--color-obsidian) 100%)',
+          background: 'linear-gradient(to bottom, var(--color-bg) 0%, transparent 10%, transparent 90%, var(--color-bg) 100%)',
         }}
       />
 

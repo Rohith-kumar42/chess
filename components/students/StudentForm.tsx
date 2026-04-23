@@ -36,7 +36,7 @@ export default function StudentForm({ student }: StudentFormProps) {
     }
   }
 
-  const inputClasses = "w-full px-4 py-2.5 rounded-lg bg-surface border border-border text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors text-sm"
+  const inputClasses = "w-full px-4 py-2.5 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors text-sm"
   const labelClasses = "block text-sm font-medium text-foreground-muted mb-1.5"
 
   return (

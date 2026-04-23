@@ -88,106 +88,106 @@ export default function StudentsTable({ students, skillLevelColors }: StudentsTa
 
   return (
     <>
-      <div className="glass-card overflow-hidden">
+      <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-board-light/20">
+              <tr className="border-b border-border/20">
                 <th
-                  className="text-left px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider cursor-pointer hover:text-ivory transition-colors select-none"
-                  onClick={() => handleSort('full_name')}
-                >
-                  Name {sortIndicator('full_name')}
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider hidden sm:table-cell">
-                  Level
-                </th>
-                <th
-                  className="text-left px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-ivory transition-colors select-none"
-                  onClick={() => handleSort('chess_rating')}
-                >
-                  Rating {sortIndicator('chess_rating')}
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider hidden md:table-cell">
-                  Trend
-                </th>
-                <th
-                  className="text-left px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:text-ivory transition-colors select-none"
-                  onClick={() => handleSort('attendance')}
-                >
-                  Attendance {sortIndicator('attendance')}
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider hidden lg:table-cell">
-                  Status
-                </th>
-                <th className="text-right px-5 py-3 text-xs font-semibold text-parchment uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-board-light/10">
-              {sortedStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center">
-                    <div className="text-dust">
-                      <Users className="mx-auto mb-3 opacity-40" size={40} />
-                      <p className="text-parchment font-medium">No students yet</p>
-                      <p className="text-sm mt-1">Add your first student to get started</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                sortedStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-board-dark/50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <Link
-                        href={`/admin/students/${student.id}`}
-                        className="font-medium text-sm text-ivory hover:text-grandmaster-gold transition-colors"
-                      >
-                        {student.full_name}
-                      </Link>
-                      {student.school && (
-                        <p className="text-xs text-dust mt-0.5">{student.school}</p>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell">
-                      {student.skill_level ? (
-                        <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium capitalize ${skillLevelColors[student.skill_level] ?? 'bg-board-mid text-parchment'}`}>
-                          {student.skill_level}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-dust">–</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-ivory hidden md:table-cell font-data">
-                      {student.chess_rating ?? '–'}
-                    </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <RatingSparkline data={student.trendData} />
-                    </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
-                      <AttendanceIndicator attended={student.attendanceData} />
-                    </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
-                      <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium ${
-                        student.is_active ? 'bg-grandmaster-gold/10 text-grandmaster-gold' : 'bg-dust/10 text-dust'
-                      }`}>
-                        {student.is_active ? 'Active' : 'Archived'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <button
-                        onClick={() => setQuickViewStudent(student)}
-                        className="p-1.5 rounded-lg text-parchment hover:text-grandmaster-gold hover:bg-board-dark transition-colors"
-                        title="Quick view"
-                      >
-                        <ExternalLink size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+                   className="text-left px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors select-none"
+                   onClick={() => handleSort('full_name')}
+                 >
+                   Name {sortIndicator('full_name')}
+                 </th>
+                 <th className="text-left px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider hidden sm:table-cell">
+                   Level
+                 </th>
+                 <th
+                   className="text-left px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-foreground transition-colors select-none"
+                   onClick={() => handleSort('chess_rating')}
+                 >
+                   Rating {sortIndicator('chess_rating')}
+                 </th>
+                 <th className="text-left px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider hidden md:table-cell">
+                   Trend
+                 </th>
+                 <th
+                   className="text-left px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:text-foreground transition-colors select-none"
+                   onClick={() => handleSort('attendance')}
+                 >
+                   Attendance {sortIndicator('attendance')}
+                 </th>
+                 <th className="text-left px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider hidden lg:table-cell">
+                   Status
+                 </th>
+                 <th className="text-right px-5 py-3 text-xs font-semibold text-foreground-muted uppercase tracking-wider">
+                   Actions
+                 </th>
+               </tr>
+             </thead>
+             <tbody className="divide-y divide-border/10">
+               {sortedStudents.length === 0 ? (
+                 <tr>
+                   <td colSpan={7} className="px-5 py-12 text-center">
+                     <div className="text-foreground-subtle">
+                       <Users className="mx-auto mb-3 opacity-40" size={40} />
+                       <p className="text-foreground-muted font-medium">No students yet</p>
+                       <p className="text-sm mt-1">Add your first student to get started</p>
+                     </div>
+                   </td>
+                 </tr>
+               ) : (
+                 sortedStudents.map((student) => (
+                   <tr key={student.id} className="hover:bg-surface-hover transition-colors even:bg-surface/30">
+                     <td className="px-5 py-3.5">
+                       <Link
+                         href={`/admin/students/${student.id}`}
+                         className="font-medium text-sm text-foreground hover:text-accent transition-colors"
+                       >
+                         {student.full_name}
+                       </Link>
+                       {student.school && (
+                         <p className="text-xs text-foreground-subtle mt-0.5">{student.school}</p>
+                       )}
+                     </td>
+                     <td className="px-5 py-3.5 hidden sm:table-cell">
+                       {student.skill_level ? (
+                         <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium capitalize ${skillLevelColors[student.skill_level] ?? 'bg-surface-raised text-foreground-muted'}`}>
+                           {student.skill_level}
+                         </span>
+                       ) : (
+                         <span className="text-sm text-foreground-subtle">–</span>
+                       )}
+                     </td>
+                     <td className="px-5 py-3.5 text-sm text-foreground hidden md:table-cell font-data">
+                       {student.chess_rating ?? '–'}
+                     </td>
+                     <td className="px-5 py-3.5 hidden md:table-cell">
+                       <RatingSparkline data={student.trendData} />
+                     </td>
+                     <td className="px-5 py-3.5 hidden lg:table-cell">
+                       <AttendanceIndicator attended={student.attendanceData} />
+                     </td>
+                     <td className="px-5 py-3.5 hidden lg:table-cell">
+                       <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium ${
+                         student.is_active ? 'bg-accent/10 text-accent' : 'bg-foreground-subtle/10 text-foreground-subtle'
+                       }`}>
+                         {student.is_active ? 'Active' : 'Archived'}
+                       </span>
+                     </td>
+                     <td className="px-5 py-3.5 text-right">
+                       <button
+                         onClick={() => setQuickViewStudent(student)}
+                         className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-surface-raised transition-colors"
+                         title="Quick view"
+                       >
+                         <ExternalLink size={16} />
+                       </button>
+                     </td>
+                   </tr>
+                 ))
+               )}
+             </tbody>
           </table>
         </div>
       </div>

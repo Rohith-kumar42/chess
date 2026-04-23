@@ -12,13 +12,13 @@ export default function PageShell({ title, subtitle, action, children }: PageShe
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1
-            className="text-3xl font-bold tracking-tight text-ivory"
+            className="text-3xl font-bold tracking-tight text-foreground"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             {title}
           </h1>
           {subtitle && (
-            <p className="text-parchment mt-1">{subtitle}</p>
+            <p className="text-foreground-muted mt-1">{subtitle}</p>
           )}
         </div>
         {action && <div>{action}</div>}

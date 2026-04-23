@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand surfaces */
+  /* Brand surfaces (Dark Theme Defaults) */
   --color-obsidian: oklch(0.13 0.012 60);
   --color-board-dark: oklch(0.18 0.015 55);
   --color-board-mid: oklch(0.22 0.012 58);
   --color-board-light: oklch(0.28 0.010 60);
 
-  /* Brand text */
+  /* Brand text (Dark Theme Defaults) */
   --color-ivory: oklch(0.94 0.014 80);
   --color-parchment: oklch(0.80 0.018 75);
   --color-dust: oklch(0.55 0.012 70);
@@ -19,20 +19,26 @@
   --color-rook-copper: oklch(0.60 0.10 50);
   --color-bishop-slate: oklch(0.45 0.05 240);
 
-  /* Semantic aliases */
-  --color-background: var(--color-obsidian);
+  /* Semantic aliases (Unified for both themes) */
+  --color-bg: var(--color-background);
   --color-surface: var(--color-board-dark);
   --color-surface-raised: var(--color-board-mid);
   --color-surface-hover: var(--color-board-light);
-  --color-foreground: var(--color-ivory);
-  --color-foreground-muted: var(--color-parchment);
-  --color-foreground-subtle: var(--color-dust);
+  --color-text: var(--color-foreground);
+  --color-text-secondary: var(--color-foreground-muted);
+  --color-text-muted: var(--color-foreground-subtle);
   --color-accent: var(--color-grandmaster-gold);
   --color-accent-hover: var(--color-gold-hover);
   --color-border: var(--color-board-light);
   --color-border-subtle: oklch(0.20 0.010 58);
 
-  /* Backward-compatible aliases — for pages not yet rewritten */
+  /* Base Semantic tokens */
+  --color-background: var(--color-obsidian);
+  --color-foreground: var(--color-ivory);
+  --color-foreground-muted: var(--color-parchment);
+  --color-foreground-subtle: var(--color-dust);
+
+  /* Backward-compatible aliases */
   --color-primary: var(--color-grandmaster-gold);
   --color-primary-hover: var(--color-gold-hover);
   --color-primary-foreground: var(--color-obsidian);
@@ -41,6 +47,8 @@
   --color-warning: var(--color-rook-copper);
   --color-danger: oklch(0.65 0.18 25);
   --color-info: var(--color-bishop-slate);
+  
+  /* Sidebar Semantic Tokens */
   --color-sidebar: var(--color-obsidian);
   --color-sidebar-hover: var(--color-board-dark);
   --color-sidebar-active: var(--color-board-mid);
@@ -55,6 +63,71 @@
   --radius-md: 8px;
   --radius-lg: 14px;
   --radius-pill: 9999px;
+}
+
+:root.light {
+  /* 🎨 LIGHT THEME COLOR SYSTEM (MANDATORY) */
+  --ivory-base:        oklch(0.97 0.008 85);   /* main page */
+  --parchment-soft:    oklch(0.94 0.012 80);   /* sections */
+  --paper-elevated:    oklch(0.98 0.006 85);   /* cards */
+
+  --board-light:       oklch(0.92 0.015 75);   /* cards active */
+  --board-mid:         oklch(0.88 0.018 70);   /* hover */
+  --board-dark:        oklch(0.80 0.020 65);   /* panels */
+
+  --ink-primary:       oklch(0.22 0.02 60);    /* main text */
+  --ink-secondary:     oklch(0.38 0.02 65);    /* labels */
+  --ink-muted:         oklch(0.55 0.015 70);   /* placeholder */
+
+  --grandmaster-gold:  oklch(0.72 0.14 68);
+  --gold-hover:        oklch(0.78 0.15 68);
+  --gold-soft:         oklch(0.88 0.06 70);
+
+  --rook-copper:       oklch(0.62 0.10 55);
+  --bishop-slate:      oklch(0.55 0.06 240);
+  --success-green:     oklch(0.70 0.12 140);
+  --danger-red:        oklch(0.65 0.15 25);
+
+  --border-subtle:     oklch(0.90 0.01 75);
+  --border-default:    oklch(0.85 0.015 70);
+  --border-strong:     oklch(0.75 0.02 65);
+
+  /* 🔗 SEMANTIC TOKEN MAPPING */
+  --color-bg:              var(--ivory-base);
+  --color-surface:         var(--paper-elevated);
+  --color-surface-raised:  var(--board-light);
+  --color-surface-hover:   var(--board-mid);
+
+  --color-text:            var(--ink-primary);
+  --color-text-secondary:  var(--ink-secondary);
+  --color-text-muted:      var(--ink-muted);
+
+  --color-accent:          var(--grandmaster-gold);
+  --color-accent-hover:    var(--gold-hover);
+
+  --color-border:          var(--border-default);
+  --color-border-subtle:   var(--border-subtle);
+
+  /* Mapping to existing app tokens for full compatibility */
+  --color-background:      var(--color-bg);
+  --color-foreground:      var(--color-text);
+  --color-foreground-muted: var(--color-text-secondary);
+  --color-foreground-subtle: var(--color-text-muted);
+  
+  --color-sidebar:         var(--parchment-soft);
+  --color-sidebar-hover:   var(--board-light);
+  --color-sidebar-active:  var(--board-light);
+  
+  --color-primary-foreground: var(--ink-primary);
+
+  /* Backward Compatibility (overriding brand colors) */
+  --color-obsidian:        var(--ivory-base);
+  --color-board-dark:      var(--board-dark);
+  --color-board-mid:       var(--board-mid);
+  --color-board-light:     var(--board-light);
+  --color-ivory:           var(--ink-primary);
+  --color-parchment:       var(--ink-secondary);
+  --color-dust:            var(--ink-muted);
 }
 
 @layer base {
@@ -133,7 +206,7 @@
 
 /* Glass morphism card */
 .glass-card {
-  background: oklch(0.18 0.015 55 / 0.8);
+  background: color-mix(in oklch, var(--color-surface) 80%, transparent);
   backdrop-filter: blur(12px);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-lg);
