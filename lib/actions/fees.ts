@@ -3,17 +3,47 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { enforceActionRateLimit } from '@/lib/actions/rate-limit-guard'
+import {
+  assertPayloadSize,
+  assertUUID,
+  requireText,
+  optionalText,
+  optionalNumber,
+  requireNumber,
+  assertEnum,
+  assertDate,
+  MAX_MEDIUM_TEXT,
+} from '@/lib/validation'
+import type { Student, Fee } from '@/types/app.types'
+
+// ─── Allowed enum values ──────────────────────────────────────────────────────
+const PAYMENT_METHODS = ['cash', 'bank_transfer', 'card', 'upi', 'cheque', 'other'] as const
 
 export async function createFee(formData: FormData) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertPayloadSize(formData)
 
+  const studentId = requireText(formData, 'student_id')
+  assertUUID('student_id', studentId)
+
+  const month = requireText(formData, 'month')
+  // month must be YYYY-MM format
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    throw new Error('"month" must be in YYYY-MM format.')
+  }
+
+  const amountDue = requireNumber(formData, 'amount_due', { min: 0, max: 1_000_000 })
+  const dueDate   = optionalText(formData, 'due_date')
+  if (dueDate) assertDate('due_date', dueDate)
+  const notes = optionalText(formData, 'notes', MAX_MEDIUM_TEXT)
+
+  const supabase = await createClient()
   const { error } = await supabase.from('fees').insert({
-    student_id: formData.get('student_id') as string,
-    month: formData.get('month') as string,
-    amount_due: Number(formData.get('amount_due')),
-    due_date: (formData.get('due_date') as string) || null,
-    notes: (formData.get('notes') as string) || null,
+    student_id: studentId,
+    month,
+    amount_due: amountDue,
+    due_date:   dueDate,
+    notes,
   })
 
   if (error) throw new Error(error.message)
@@ -22,10 +52,16 @@ export async function createFee(formData: FormData) {
 
 export async function recordPayment(feeId: string, formData: FormData) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertUUID('feeId', feeId)
+  assertPayloadSize(formData)
 
-  const amount = Number(formData.get('amount'))
-  const paymentMethod = (formData.get('payment_method') as string) || null
+  const amount = requireNumber(formData, 'amount', { min: 0.01, max: 1_000_000 })
+  const rawMethod   = optionalText(formData, 'payment_method')
+  const paymentMethod = rawMethod
+    ? assertEnum('payment_method', rawMethod, PAYMENT_METHODS)
+    : null
+
+  const supabase = await createClient()
 
   // Get current fee
   const { data: fee } = await supabase
@@ -41,9 +77,9 @@ export async function recordPayment(feeId: string, formData: FormData) {
   const { error } = await supabase
     .from('fees')
     .update({
-      amount_paid: newAmountPaid,
+      amount_paid:    newAmountPaid,
       payment_method: paymentMethod,
-      paid_date: new Date().toISOString().split('T')[0],
+      paid_date:      new Date().toISOString().split('T')[0],
     })
     .eq('id', feeId)
 
@@ -53,12 +89,19 @@ export async function recordPayment(feeId: string, formData: FormData) {
 
 export async function bulkGenerateFees(formData: FormData) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
-  const month = formData.get('month') as string
-  const amountDue = Number(formData.get('amount_due'))
-  const dueDate = (formData.get('due_date') as string) || null
+  assertPayloadSize(formData)
 
-  // Get all active students
+  const month = requireText(formData, 'month')
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    throw new Error('"month" must be in YYYY-MM format.')
+  }
+
+  const amountDue = requireNumber(formData, 'amount_due', { min: 0, max: 1_000_000 })
+  const dueDate   = optionalText(formData, 'due_date')
+  if (dueDate) assertDate('due_date', dueDate)
+
+  const supabase = await createClient()
+
   const { data: students } = await supabase
     .from('students')
     .select('id')
@@ -70,16 +113,13 @@ export async function bulkGenerateFees(formData: FormData) {
     student_id: s.id,
     month,
     amount_due: amountDue,
-    due_date: dueDate,
+    due_date:   dueDate,
   }))
 
   const { error } = await supabase.from('fees').insert(feeRecords)
-
   if (error) throw new Error(error.message)
   revalidatePath('/admin/fees')
 }
-
-import type { Student, Fee } from '@/types/app.types'
 
 export interface StudentFeeGroup {
   student: Student
@@ -87,9 +127,9 @@ export interface StudentFeeGroup {
 }
 
 export async function getFeesForParent(parentId: string): Promise<StudentFeeGroup[]> {
+  assertUUID('parentId', parentId)
   const supabase = await createClient()
 
-  // 1) Fetch children for this parent
   const { data: students, error: studentsErr } = await supabase
     .from('students')
     .select('*')
@@ -99,9 +139,8 @@ export async function getFeesForParent(parentId: string): Promise<StudentFeeGrou
   if (studentsErr) throw new Error(studentsErr.message)
   if (!students || students.length === 0) return []
 
-  const studentIds = students.map((s) => s.id)
+  const studentIds = students.map(s => s.id)
 
-  // 2) Fetch all fees for those children
   const { data: fees, error: feesErr } = await supabase
     .from('fees')
     .select('*')
@@ -110,9 +149,8 @@ export async function getFeesForParent(parentId: string): Promise<StudentFeeGrou
 
   if (feesErr) throw new Error(feesErr.message)
 
-  // 3) Group fees per student
-  return students.map((student) => ({
+  return students.map(student => ({
     student: student as Student,
-    fees: (fees ?? []).filter((f) => f.student_id === student.id) as Fee[],
+    fees: (fees ?? []).filter(f => f.student_id === student.id) as Fee[],
   }))
 }

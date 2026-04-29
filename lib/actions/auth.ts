@@ -3,6 +3,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { authLimiter } from '@/lib/rate-limit'
+import {
+  assertPayloadSize,
+  assertEmail,
+  sanitizeText,
+  ValidationError,
+  MAX_SHORT_TEXT,
+} from '@/lib/validation'
 
 export interface LoginResult {
   success: boolean
@@ -17,6 +24,13 @@ export interface LoginResult {
  * of 5 attempts per 15 minutes per IP address.
  */
 export async function loginAction(formData: FormData): Promise<LoginResult> {
+  // ── Payload size guard ────────────────────────────────────────────────
+  try {
+    assertPayloadSize(formData)
+  } catch (e) {
+    return { success: false, error: (e as ValidationError).message }
+  }
+
   const headersList = await headers()
   const forwarded = headersList.get('x-forwarded-for')
   const ip = forwarded?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown'
@@ -34,34 +48,54 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     }
   }
 
-  // ── Authenticate via Supabase ─────────────────────────────────────────
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  // ── Input validation ──────────────────────────────────────────────────
+  try {
+    const rawEmail = String(formData.get('email') ?? '').trim()
+    const rawPassword = String(formData.get('password') ?? '')
 
-  if (!email || !password) {
-    return { success: false, error: 'Email and password are required.' }
-  }
+    if (!rawEmail || !rawPassword) {
+      return { success: false, error: 'Email and password are required.' }
+    }
 
-  const supabase = await createClient()
+    // Email: sanitise, format-check, length-cap
+    const email = sanitizeText(rawEmail)
+    if (email.length > MAX_SHORT_TEXT) {
+      return { success: false, error: 'Email address is too long.' }
+    }
+    assertEmail('email', email)
 
-  const { data, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+    // Password: length-cap only (no sanitisation — passwords are hashed server-side)
+    if (rawPassword.length > 128) {
+      return { success: false, error: 'Password is too long.' }
+    }
 
-  if (authError) {
-    return { success: false, error: authError.message }
-  }
+    // ── Authenticate via Supabase ─────────────────────────────────────────
+    const supabase = await createClient()
 
-  // ── Determine user role for redirect ──────────────────────────────────
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', data.user.id)
-    .single()
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password: rawPassword,
+    })
 
-  return {
-    success: true,
-    role: profile?.role || 'student',
+    if (authError) {
+      return { success: false, error: authError.message }
+    }
+
+    // ── Determine user role for redirect ──────────────────────────────────
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+
+    return {
+      success: true,
+      role: profile?.role || 'student',
+    }
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      return { success: false, error: e.message }
+    }
+    throw e
   }
 }

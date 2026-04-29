@@ -3,34 +3,91 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { enforceActionRateLimit } from '@/lib/actions/rate-limit-guard'
+import {
+  assertPayloadSize,
+  assertUUID,
+  requireText,
+  optionalText,
+  optionalNumber,
+  assertDate,
+  assertEnum,
+  sanitizeText,
+  MAX_MEDIUM_TEXT,
+} from '@/lib/validation'
+import type { ProgressEntry } from '@/types/app.types'
+
+// ─── Allowed enum values ──────────────────────────────────────────────────────
+const SKILL_LEVELS   = ['beginner', 'intermediate', 'advanced', 'expert'] as const
+const GAME_RESULTS   = ['win', 'loss', 'draw', 'n/a'] as const
+
+/** Max items in a comma-separated list (openings, tactics) */
+const MAX_LIST_ITEMS = 20
+const MAX_ITEM_LEN   = 80  // chars per item
+
+function sanitizeCSVList(raw: string): string[] {
+  return raw
+    .split(',')
+    .map(s => sanitizeText(s))
+    .filter(Boolean)
+    .slice(0, MAX_LIST_ITEMS)
+    .map(s => s.substring(0, MAX_ITEM_LEN))
+}
 
 export async function createProgressEntry(formData: FormData) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertPayloadSize(formData)
 
+  const studentId = requireText(formData, 'student_id')
+  assertUUID('student_id', studentId)
+
+  const entryDate = optionalText(formData, 'entry_date') ?? new Date().toISOString().split('T')[0]
+  assertDate('entry_date', entryDate)
+
+  const rawLevel = optionalText(formData, 'skill_level')
+  const skillLevel = rawLevel ? assertEnum('skill_level', rawLevel, SKILL_LEVELS) : null
+
+  const ratingBefore = optionalNumber(formData, 'rating_before', { min: 0, max: 4000 })
+  const ratingAfter  = optionalNumber(formData, 'rating_after',  { min: 0, max: 4000 })
+
+  const rawGameResult = optionalText(formData, 'game_result')
+  const gameResult    = rawGameResult
+    ? assertEnum('game_result', rawGameResult, GAME_RESULTS)
+    : null
+
+  const rawOpenings = formData.get('openings_studied')
+    ? String(formData.get('openings_studied'))
+    : null
+  const openingsStudied = rawOpenings ? sanitizeCSVList(rawOpenings) : null
+
+  const rawTactics  = formData.get('tactics_topics')
+    ? String(formData.get('tactics_topics'))
+    : null
+  const tacticsTopics = rawTactics ? sanitizeCSVList(rawTactics) : null
+
+  const coachRemarks    = optionalText(formData, 'coach_remarks',    MAX_MEDIUM_TEXT) ?? ''
+  const areasToImprove  = optionalText(formData, 'areas_to_improve', MAX_MEDIUM_TEXT)
+  const homework        = optionalText(formData, 'homework',         MAX_MEDIUM_TEXT)
+
+  const rawSessionId = optionalText(formData, 'session_id')
+  if (rawSessionId) assertUUID('session_id', rawSessionId)
+
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const studentId = formData.get('student_id') as string
-  const skillLevel = (formData.get('skill_level') as string) || null
-
   const { error } = await supabase.from('progress_entries').insert({
-    student_id: studentId,
-    entry_date: (formData.get('entry_date') as string) || new Date().toISOString().split('T')[0],
-    skill_level: skillLevel,
-    rating_before: formData.get('rating_before') ? Number(formData.get('rating_before')) : null,
-    rating_after: formData.get('rating_after') ? Number(formData.get('rating_after')) : null,
-    game_result: (formData.get('game_result') as string) || null,
-    openings_studied: formData.get('openings_studied') 
-      ? (formData.get('openings_studied') as string).split(',').map(s => s.trim()).filter(Boolean) 
-      : null,
-    tactics_topics: formData.get('tactics_topics')
-      ? (formData.get('tactics_topics') as string).split(',').map(s => s.trim()).filter(Boolean)
-      : null,
-    coach_remarks: formData.get('coach_remarks') as string,
-    areas_to_improve: (formData.get('areas_to_improve') as string) || null,
-    homework: (formData.get('homework') as string) || null,
-    coach_id: user?.id ?? null,
-    session_id: (formData.get('session_id') as string) || null,
+    student_id:       studentId,
+    entry_date:       entryDate,
+    skill_level:      skillLevel,
+    rating_before:    ratingBefore,
+    rating_after:     ratingAfter,
+    game_result:      gameResult,
+    openings_studied: openingsStudied,
+    tactics_topics:   tacticsTopics,
+    coach_remarks:    coachRemarks,
+    areas_to_improve: areasToImprove,
+    homework,
+    coach_id:         user?.id ?? null,
+    session_id:       rawSessionId,
   })
 
   if (error) throw new Error(error.message)
@@ -48,25 +105,26 @@ export async function createProgressEntry(formData: FormData) {
   revalidatePath(`/admin/students/${studentId}`)
 }
 
-import type { ProgressEntry } from '@/types/app.types'
+// ─── Read-only helpers ────────────────────────────────────────────────────────
 
 export interface RatingHistoryPoint {
-  date: string
+  date:   string
   rating: number
 }
 
 export interface ProgressData {
-  entries: ProgressEntry[]
-  ratingHistory: RatingHistoryPoint[]
-  winRate: number
-  totalWins: number
-  totalLosses: number
-  totalDraws: number
-  totalGames: number
+  entries:           ProgressEntry[]
+  ratingHistory:     RatingHistoryPoint[]
+  winRate:           number
+  totalWins:         number
+  totalLosses:       number
+  totalDraws:        number
+  totalGames:        number
   attendancePercent: number
 }
 
 export async function getProgressForStudent(studentId: string): Promise<ProgressData> {
+  assertUUID('studentId', studentId)
   const supabase = await createClient()
 
   const { data: entries, error } = await supabase
@@ -79,27 +137,20 @@ export async function getProgressForStudent(studentId: string): Promise<Progress
 
   const all = (entries ?? []) as ProgressEntry[]
 
-  // Build rating history from entries that have rating_after
   const ratingHistory: RatingHistoryPoint[] = all
-    .filter((e) => e.rating_after !== null)
-    .map((e) => ({ date: e.entry_date, rating: e.rating_after! }))
+    .filter(e => e.rating_after !== null)
+    .map(e => ({ date: e.entry_date, rating: e.rating_after! }))
 
-  // Game results
-  const gamesWithResult = all.filter(
-    (e) => e.game_result && e.game_result !== 'n/a'
-  )
-  const totalGames = gamesWithResult.length
-  const totalWins = gamesWithResult.filter((e) => e.game_result === 'win').length
-  const totalLosses = gamesWithResult.filter((e) => e.game_result === 'loss').length
-  const totalDraws = gamesWithResult.filter((e) => e.game_result === 'draw').length
-  const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0
+  const gamesWithResult = all.filter(e => e.game_result && e.game_result !== 'n/a')
+  const totalGames  = gamesWithResult.length
+  const totalWins   = gamesWithResult.filter(e => e.game_result === 'win').length
+  const totalLosses = gamesWithResult.filter(e => e.game_result === 'loss').length
+  const totalDraws  = gamesWithResult.filter(e => e.game_result === 'draw').length
+  const winRate     = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0
 
-  // Attendance: entries in last 30 days vs expected (assume ~4 sessions/month)
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  const recentEntries = all.filter(
-    (e) => new Date(e.entry_date) >= thirtyDaysAgo
-  )
+  const recentEntries = all.filter(e => new Date(e.entry_date) >= thirtyDaysAgo)
   const expectedSessions = 4
   const attendancePercent = Math.min(
     100,

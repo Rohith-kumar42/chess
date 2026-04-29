@@ -3,20 +3,62 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { enforceActionRateLimit } from '@/lib/actions/rate-limit-guard'
+import {
+  assertPayloadSize,
+  assertUUID,
+  requireText,
+  optionalText,
+  optionalNumber,
+  assertDate,
+  assertURL,
+  assertEnum,
+  MAX_MEDIUM_TEXT,
+} from '@/lib/validation'
+import type { Tournament, TournamentParticipant, Student } from '@/types/app.types'
+
+// ─── Allowed enum values ──────────────────────────────────────────────────────
+const TOURNAMENT_FORMATS = [
+  'Swiss', 'Round Robin', 'Knockout', 'Rapid', 'Blitz', 'Classical', 'Online', 'Other',
+] as const
+
+const MEDALS = ['gold', 'silver', 'bronze', 'none'] as const
+
+const TOURNAMENT_STATUSES = ['upcoming', 'ongoing', 'completed', 'cancelled'] as const
+
+// ─── Admin write actions ──────────────────────────────────────────────────────
 
 export async function createTournament(formData: FormData) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertPayloadSize(formData)
 
+  const name     = requireText(formData, 'name')
+  const organizer = optionalText(formData, 'organizer')
+  const location  = optionalText(formData, 'location')
+
+  const tournamentDate = requireText(formData, 'tournament_date')
+  assertDate('tournament_date', tournamentDate)
+
+  const endDate = optionalText(formData, 'end_date')
+  if (endDate) assertDate('end_date', endDate)
+
+  const rawFormat = optionalText(formData, 'format')
+  const format    = rawFormat ? assertEnum('format', rawFormat, TOURNAMENT_FORMATS) : null
+
+  const rawRegUrl = optionalText(formData, 'registration_url')
+  if (rawRegUrl) assertURL('registration_url', rawRegUrl)
+
+  const description = optionalText(formData, 'description', MAX_MEDIUM_TEXT)
+
+  const supabase = await createClient()
   const { error } = await supabase.from('tournaments').insert({
-    name: formData.get('name') as string,
-    organizer: (formData.get('organizer') as string) || null,
-    location: (formData.get('location') as string) || null,
-    tournament_date: formData.get('tournament_date') as string,
-    end_date: (formData.get('end_date') as string) || null,
-    format: (formData.get('format') as string) || null,
-    registration_url: (formData.get('registration_url') as string) || null,
-    description: (formData.get('description') as string) || null,
+    name,
+    organizer,
+    location,
+    tournament_date:  tournamentDate,
+    end_date:         endDate,
+    format,
+    registration_url: rawRegUrl,
+    description,
   })
 
   if (error) throw new Error(error.message)
@@ -25,16 +67,32 @@ export async function createTournament(formData: FormData) {
 
 export async function addTournamentParticipant(formData: FormData) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertPayloadSize(formData)
 
+  const tournamentId = requireText(formData, 'tournament_id')
+  assertUUID('tournament_id', tournamentId)
+
+  const studentId = requireText(formData, 'student_id')
+  assertUUID('student_id', studentId)
+
+  const rank               = optionalNumber(formData, 'rank',               { min: 1, max: 10_000 })
+  const score              = optionalNumber(formData, 'score',              { min: 0, max: 100 })
+  const performanceRating  = optionalNumber(formData, 'performance_rating', { min: 0, max: 4000 })
+
+  const rawMedal = optionalText(formData, 'medal') ?? 'none'
+  const medal    = assertEnum('medal', rawMedal, MEDALS)
+
+  const notes = optionalText(formData, 'notes', MAX_MEDIUM_TEXT)
+
+  const supabase = await createClient()
   const { error } = await supabase.from('tournament_participants').insert({
-    tournament_id: formData.get('tournament_id') as string,
-    student_id: formData.get('student_id') as string,
-    rank: formData.get('rank') ? Number(formData.get('rank')) : null,
-    score: formData.get('score') ? Number(formData.get('score')) : null,
-    performance_rating: formData.get('performance_rating') ? Number(formData.get('performance_rating')) : null,
-    medal: (formData.get('medal') as string) || 'none',
-    notes: (formData.get('notes') as string) || null,
+    tournament_id:      tournamentId,
+    student_id:         studentId,
+    rank,
+    score,
+    performance_rating: performanceRating,
+    medal,
+    notes,
   })
 
   if (error) throw new Error(error.message)
@@ -43,8 +101,10 @@ export async function addTournamentParticipant(formData: FormData) {
 
 export async function updateTournamentStatus(id: string, status: string) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertUUID('id', id)
+  assertEnum('status', status, TOURNAMENT_STATUSES)
 
+  const supabase = await createClient()
   const { error } = await supabase
     .from('tournaments')
     .update({ status })
@@ -54,30 +114,30 @@ export async function updateTournamentStatus(id: string, status: string) {
   revalidatePath('/admin/tournaments')
 }
 
-import type { Tournament, TournamentParticipant, Student } from '@/types/app.types'
+// ─── Student-facing read/write ────────────────────────────────────────────────
 
 export interface TournamentWithRegistration extends Tournament {
   isRegistered: boolean
 }
 
 export interface PastTournament extends Tournament {
-  rank: number | null
-  score: number | null
+  rank:               number | null
+  score:              number | null
   performance_rating: number | null
-  medal: string | null
-  notes: string | null
+  medal:              string | null
+  notes:              string | null
 }
 
 export interface StudentTournamentData {
   upcoming: TournamentWithRegistration[]
-  past: PastTournament[]
+  past:     PastTournament[]
 }
 
 export async function getTournamentsForStudent(studentId: string): Promise<StudentTournamentData> {
+  assertUUID('studentId', studentId)
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
 
-  // 1) Upcoming tournaments
   const { data: allTournaments, error: tErr } = await supabase
     .from('tournaments')
     .select('*')
@@ -86,8 +146,7 @@ export async function getTournamentsForStudent(studentId: string): Promise<Stude
 
   if (tErr) throw new Error(tErr.message)
 
-  // 2) Check which ones this student is registered for
-  const tournamentIds = (allTournaments ?? []).map((t) => t.id)
+  const tournamentIds = (allTournaments ?? []).map(t => t.id)
   let registeredSet = new Set<string>()
 
   if (tournamentIds.length > 0) {
@@ -97,15 +156,14 @@ export async function getTournamentsForStudent(studentId: string): Promise<Stude
       .eq('student_id', studentId)
       .in('tournament_id', tournamentIds)
 
-    registeredSet = new Set((registrations ?? []).map((r) => r.tournament_id))
+    registeredSet = new Set((registrations ?? []).map(r => r.tournament_id))
   }
 
-  const upcoming: TournamentWithRegistration[] = (allTournaments ?? []).map((t) => ({
+  const upcoming: TournamentWithRegistration[] = (allTournaments ?? []).map(t => ({
     ...(t as Tournament),
     isRegistered: registeredSet.has(t.id),
   }))
 
-  // 3) Past tournaments this student participated in
   const { data: pastParticipations, error: pErr } = await supabase
     .from('tournament_participants')
     .select('*, tournaments(*)')
@@ -122,11 +180,11 @@ export async function getTournamentsForStudent(studentId: string): Promise<Stude
       const t = p.tournaments as Tournament
       return {
         ...t,
-        rank: p.rank as number | null,
-        score: p.score as number | null,
+        rank:               p.rank               as number | null,
+        score:              p.score              as number | null,
         performance_rating: p.performance_rating as number | null,
-        medal: p.medal as string | null,
-        notes: p.notes as string | null,
+        medal:              p.medal              as string | null,
+        notes:              p.notes              as string | null,
       }
     })
     .sort((a, b) => b.tournament_date.localeCompare(a.tournament_date))
@@ -136,29 +194,28 @@ export async function getTournamentsForStudent(studentId: string): Promise<Stude
 
 export async function registerForTournament(tournamentId: string, studentId: string) {
   await enforceActionRateLimit()
-  const supabase = await createClient()
+  assertUUID('tournamentId', tournamentId)
+  assertUUID('studentId', studentId)
 
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  // Insert into tournament_participants (same table as admin)
   const { error } = await supabase.from('tournament_participants').insert({
     tournament_id: tournamentId,
-    student_id: studentId,
+    student_id:    studentId,
   })
 
   if (error) throw new Error(error.message)
 
-  // Fetch student name and tournament name for the notification
   const [studentRes, tournamentRes] = await Promise.all([
     supabase.from('students').select('full_name').eq('id', studentId).single(),
     supabase.from('tournaments').select('name').eq('id', tournamentId).single(),
   ])
 
-  const studentName = studentRes.data?.full_name ?? 'A student'
-  const tournamentName = tournamentRes.data?.name ?? 'a tournament'
+  const studentName    = studentRes.data?.full_name ?? 'A student'
+  const tournamentName = tournamentRes.data?.name   ?? 'a tournament'
 
-  // Notify all admins (if notifications table exists)
   try {
     const { data: admins } = await supabase
       .from('profiles')
@@ -166,16 +223,14 @@ export async function registerForTournament(tournamentId: string, studentId: str
       .eq('role', 'admin')
 
     if (admins && admins.length > 0) {
-      const notifications = admins.map((admin) => ({
+      const notifications = admins.map(admin => ({
         recipient_id: admin.id,
         message: `Student ${studentName} registered for ${tournamentName} — pending approval.`,
         is_read: false,
       }))
-
       await supabase.from('notifications').insert(notifications)
     }
   } catch {
-    // notifications table might not exist yet — don't block registration
     console.warn('Could not create admin notification (table may not exist)')
   }
 
@@ -183,18 +238,21 @@ export async function registerForTournament(tournamentId: string, studentId: str
   revalidatePath('/admin/tournaments')
 }
 
+// ─── Detail view ──────────────────────────────────────────────────────────────
+
 export interface TournamentDetail extends Tournament {
   participants: Array<{
-    student_id: string
-    full_name: string
-    rank: number | null
-    score: number | null
+    student_id:         string
+    full_name:          string
+    rank:               number | null
+    score:              number | null
     performance_rating: number | null
-    medal: string | null
+    medal:              string | null
   }>
 }
 
 export async function getTournamentDetail(tournamentId: string): Promise<TournamentDetail | null> {
+  assertUUID('tournamentId', tournamentId)
   const supabase = await createClient()
 
   const { data: tournament, error: tErr } = await supabase
@@ -214,12 +272,12 @@ export async function getTournamentDetail(tournamentId: string): Promise<Tournam
   return {
     ...(tournament as Tournament),
     participants: (participants ?? []).map((p: Record<string, unknown>) => ({
-      student_id: p.student_id as string,
-      full_name: (p.students as Record<string, string> | null)?.full_name ?? 'Unknown',
-      rank: p.rank as number | null,
-      score: p.score as number | null,
+      student_id:         p.student_id         as string,
+      full_name:          (p.students as Record<string, string> | null)?.full_name ?? 'Unknown',
+      rank:               p.rank               as number | null,
+      score:              p.score              as number | null,
       performance_rating: p.performance_rating as number | null,
-      medal: p.medal as string | null,
+      medal:              p.medal              as string | null,
     })),
   }
 }
