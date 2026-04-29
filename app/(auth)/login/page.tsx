@@ -1,44 +1,35 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { loginAction } from '@/lib/actions/auth'
 import { KnightIcon } from '@/components/icons/ChessPieces'
 import ThemeToggle from '@/components/shared/ThemeToggle'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-  const supabase = createClient()
+  const [retryAfter, setRetryAfter] = useState<number | null>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setRetryAfter(null)
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const formData = new FormData(e.currentTarget)
+    const result = await loginAction(formData)
 
-    if (authError) {
-      setError(authError.message)
+    if (!result.success) {
+      setError(result.error ?? 'Login failed.')
+      if (result.retryAfterSeconds) {
+        setRetryAfter(result.retryAfterSeconds)
+      }
       setLoading(false)
       return
     }
 
-    // Fetch user role to redirect appropriately
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
-
-    const role = profile?.role || 'student'
-    
+    // Redirect based on role — full navigation to refresh middleware session
+    const role = result.role || 'student'
     if (role === 'admin') {
       window.location.href = '/admin/dashboard'
     } else if (role === 'parent') {
@@ -47,6 +38,8 @@ export default function LoginPage() {
       window.location.href = '/student/dashboard'
     }
   }
+
+  const isRateLimited = retryAfter !== null && retryAfter > 0
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
@@ -73,8 +66,31 @@ export default function LoginPage() {
 
           {/* Error */}
           {error && (
-            <div className="mb-6 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm animate-fade-in">
-              {error}
+            <div
+              className={`mb-6 p-3 rounded-lg text-sm animate-fade-in ${
+                isRateLimited
+                  ? 'bg-warning/10 border border-warning/20 text-warning'
+                  : 'bg-danger/10 border border-danger/20 text-danger'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                {isRateLimited && (
+                  <svg
+                    className="w-4 h-4 mt-0.5 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v2m0 4h.01M12 3a9 9 0 110 18 9 9 0 010-18z"
+                    />
+                  </svg>
+                )}
+                <span>{error}</span>
+              </div>
             </div>
           )}
 
@@ -86,9 +102,8 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
                 className="w-full px-4 py-2.5 rounded-lg bg-surface-raised border border-border text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
@@ -101,9 +116,8 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 rounded-lg bg-surface-raised border border-border text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
@@ -112,7 +126,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isRateLimited}
               className="w-full py-2.5 rounded-lg bg-accent text-primary-foreground font-semibold hover:bg-accent-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
             >
               {loading ? (
@@ -123,6 +137,8 @@ export default function LoginPage() {
                   </svg>
                   Signing in...
                 </span>
+              ) : isRateLimited ? (
+                'Too many attempts'
               ) : (
                 'Sign In'
               )}

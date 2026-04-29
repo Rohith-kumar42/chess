@@ -2,8 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { enforceActionRateLimit } from '@/lib/actions/rate-limit-guard'
 
 export async function createFee(formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
 
   const { error } = await supabase.from('fees').insert({
@@ -19,6 +21,7 @@ export async function createFee(formData: FormData) {
 }
 
 export async function recordPayment(feeId: string, formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
 
   const amount = Number(formData.get('amount'))
@@ -49,6 +52,7 @@ export async function recordPayment(feeId: string, formData: FormData) {
 }
 
 export async function bulkGenerateFees(formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
   const month = formData.get('month') as string
   const amountDue = Number(formData.get('amount_due'))
@@ -73,4 +77,42 @@ export async function bulkGenerateFees(formData: FormData) {
 
   if (error) throw new Error(error.message)
   revalidatePath('/admin/fees')
+}
+
+import type { Student, Fee } from '@/types/app.types'
+
+export interface StudentFeeGroup {
+  student: Student
+  fees: Fee[]
+}
+
+export async function getFeesForParent(parentId: string): Promise<StudentFeeGroup[]> {
+  const supabase = await createClient()
+
+  // 1) Fetch children for this parent
+  const { data: students, error: studentsErr } = await supabase
+    .from('students')
+    .select('*')
+    .eq('parent_id', parentId)
+    .order('full_name')
+
+  if (studentsErr) throw new Error(studentsErr.message)
+  if (!students || students.length === 0) return []
+
+  const studentIds = students.map((s) => s.id)
+
+  // 2) Fetch all fees for those children
+  const { data: fees, error: feesErr } = await supabase
+    .from('fees')
+    .select('*')
+    .in('student_id', studentIds)
+    .order('month', { ascending: false })
+
+  if (feesErr) throw new Error(feesErr.message)
+
+  // 3) Group fees per student
+  return students.map((student) => ({
+    student: student as Student,
+    fees: (fees ?? []).filter((f) => f.student_id === student.id) as Fee[],
+  }))
 }

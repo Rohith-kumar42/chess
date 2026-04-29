@@ -147,3 +147,11 @@ export interface DashboardStats {
   totalOutstanding: number
   upcomingSessions: Session[]
 }
+
+export interface Notification {
+  id: string
+  recipient_id: string
+  message: string
+  is_read: boolean
+  created_at: string
+}

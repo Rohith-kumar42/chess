@@ -2,8 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { enforceActionRateLimit } from '@/lib/actions/rate-limit-guard'
 
 export async function createSession(formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -40,6 +42,7 @@ export async function createSession(formData: FormData) {
 }
 
 export async function createRecording(formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

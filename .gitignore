@@ -84,8 +84,19 @@ desktop.ini
 *.swp
 *.log
 
-# Project Specific
+# AI Agent Tooling
+/.agents/
+/.windsurf/
+CLAUDE.md
+skills-lock.json
+
+# Workspace Files
+*.code-workspace
+
+# Project Specific — planning & audit docs (not application code)
 chess-academy-implementation-plan.html
 chess-academy-implementation-plan.md
 chess_academy_audit_and_prompt.md
+chess_academy_master_prompt.md
 frontend_analysis.md
+functionality_audit.md

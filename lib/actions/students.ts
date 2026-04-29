@@ -2,8 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { enforceActionRateLimit } from '@/lib/actions/rate-limit-guard'
 
 export async function createStudent(formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
 
   const { error } = await supabase.from('students').insert({
@@ -23,6 +25,7 @@ export async function createStudent(formData: FormData) {
 }
 
 export async function updateStudent(id: string, formData: FormData) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -46,6 +49,7 @@ export async function updateStudent(id: string, formData: FormData) {
 }
 
 export async function toggleStudentActive(id: string, isActive: boolean) {
+  await enforceActionRateLimit()
   const supabase = await createClient()
 
   const { error } = await supabase

@@ -189,7 +189,7 @@ export default async function TournamentDetailPage({ params, searchParams }: { p
                     tournament.tournament_participants
                       .sort((a: any, b: any) => (a.rank || 999) - (b.rank || 999))
                       .map((p: any) => (
-                        <tr key={p.id} className="hover:bg-surface-hover/50 transition-colors">
+                        <tr key={p.student_id} className="hover:bg-surface-hover/50 transition-colors">
                           <td className="px-5 py-3.5">
                             <Link href={`/admin/students/${p.student_id}`} className="font-medium text-sm hover:text-primary transition-colors">
                               {p.students?.full_name}
